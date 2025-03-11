@@ -22,10 +22,34 @@ class _EventPageState extends State<EventPage> {
   bool isUserOwner = false; // Czy użytkownik jest właścicielem wydarzenia?
   String? userId; // Przechowywanie userId
 
+  int likes = 0;
+  int dislikes = 0;
+  bool? userLikeStatus; // null - brak głosu, true - like, false - dislike
+
+  Future<void> _fetchLikes() async {
+    final data = await DatabaseHelper.getEventLikes(currentEvent.id, userId);
+    if (data != null) {
+      setState(() {
+        likes = data['likes'];
+        dislikes = data['dislikes'];
+        userLikeStatus = data['userLikeStatus'];
+      });
+    }
+  }
+
+  Future<void> _toggleLike(bool isLike) async {
+    final success =
+        await DatabaseHelper.toggleLike(currentEvent.id, userId, isLike);
+    if (success) {
+      _fetchLikes();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     currentEvent = widget.event;
+    _fetchLikes();
     _initializeUser(); // Inicjalizacja użytkownika
   }
 
@@ -38,6 +62,7 @@ class _EventPageState extends State<EventPage> {
       print('Błąd podczas inicjalizacji użytkownika: $e');
     }
   }
+
   void _updateEvent(Event updatedEvent) {
     setState(() {
       currentEvent = updatedEvent;
@@ -55,8 +80,8 @@ class _EventPageState extends State<EventPage> {
   Future<void> _checkUserJoinedStatus() async {
     if (userId != null) {
       try {
-        final isJoined = await DatabaseHelper.isUserJoinedEvent(
-            currentEvent.id, userId!);
+        final isJoined =
+            await DatabaseHelper.isUserJoinedEvent(currentEvent.id, userId!);
 
         setState(() {
           isUserJoined = isJoined;
@@ -80,7 +105,8 @@ class _EventPageState extends State<EventPage> {
         });
       } else {
         if (currentEvent.maxParticipants != -1 &&
-            currentEvent.registeredParticipants >= currentEvent.maxParticipants) {
+            currentEvent.registeredParticipants >=
+                currentEvent.maxParticipants) {
           // Jeśli liczba uczestników osiągnęła maksymalny limit
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -129,10 +155,40 @@ class _EventPageState extends State<EventPage> {
               Positioned(
                 bottom: 16,
                 left: 16,
-                child: Text(
-                  currentEvent.name,
-                  textAlign: TextAlign.center,
-                  style: HiveTextStyles.title,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      currentEvent.name,
+                      textAlign: TextAlign.center,
+                      style: HiveTextStyles.title,
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.thumb_up,
+                              color: userLikeStatus == true
+                                  ? Colors.green
+                                  : Colors.white),
+                          onPressed: () => _toggleLike(true),
+                        ),
+                        Text('$likes',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 18)),
+                        SizedBox(width: 10),
+                        IconButton(
+                          icon: Icon(Icons.thumb_down,
+                              color: userLikeStatus == false
+                                  ? Colors.red
+                                  : Colors.white),
+                          onPressed: () => _toggleLike(false),
+                        ),
+                        Text('$dislikes',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 18)),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -167,14 +223,11 @@ class _EventPageState extends State<EventPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               currentEvent.maxParticipants != -1
-                  ? '${currentEvent.registeredParticipants} / ${currentEvent
-                  .maxParticipants}'
+                  ? '${currentEvent.registeredParticipants} / ${currentEvent.maxParticipants}'
                   : 'Wydarzenie otwarte, ${currentEvent.registeredParticipants} uczestników',
               style: HiveTextStyles.regular,
             ),
           ),
-
-          // Wyświetl przycisk "Edytuj wydarzenie" tylko, jeśli użytkownik jest właścicielem wydarzenia
           if (isUserOwner)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -197,7 +250,6 @@ class _EventPageState extends State<EventPage> {
                 child: const Text('Edytuj wydarzenie'),
               ),
             ),
-          // Wyświetl przycisk "Zapisz się / Wypisz się" tylko, jeśli użytkownik nie jest właścicielem wydarzenia
           if (!isUserOwner)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

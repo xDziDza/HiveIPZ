@@ -8,13 +8,13 @@ class DatabaseHelper {
   static const String link = 'https://vps.jakosinski.pl:5000';
 
   static Future<void> addUser(
-      String name,
-      String surname,
-      int age,
-      String nickName,
-      String email,
-      String password,
-      ) async {
+    String name,
+    String surname,
+    int age,
+    String nickName,
+    String email,
+    String password,
+  ) async {
     final url = Uri.parse('$link/register');
     final response = await http.post(
       url,
@@ -58,6 +58,7 @@ class DatabaseHelper {
       throw Exception('Błąd połączenia: $e');
     }
   }
+
   // Update User by Patryk
   static Future<void> updateUser(
       String userId, Map<String, String> updatedFields) async {
@@ -86,8 +87,7 @@ class DatabaseHelper {
     // FIXME: zmieniłem to, żeby było ładniejsze, ale niech ktoś kto to bardziej ogarnia te kody sprawdzi czy to śmiga
     if (response.statusCode != 200) {
       // Token jest nieważny
-      throw Exception(
-          'Token jest nieważny');
+      throw Exception('Token jest nieważny');
     }
   }
 
@@ -111,7 +111,8 @@ class DatabaseHelper {
   }
 
   // Zmiana hasła po starym haśle
-  static Future<void> changePasswordWithOld(String oldPassword, String newPassword) async {
+  static Future<void> changePasswordWithOld(
+      String oldPassword, String newPassword) async {
     final url = Uri.parse('$link/change_password_with_old');
     final response = await http.post(
       url,
@@ -140,9 +141,9 @@ class DatabaseHelper {
     }
   }
 
-
   // Aktualizowanie wydarzeń
-  static Future<void> updateEvent(String id, Map<String, dynamic> eventData) async {
+  static Future<void> updateEvent(
+      String id, Map<String, dynamic> eventData) async {
     final url = Uri.parse('$link/events/$id');
     final response = await http.put(
       url,
@@ -155,7 +156,6 @@ class DatabaseHelper {
       final error = jsonDecode(response.body)['error'] ?? 'Nieznany błąd';
       throw Exception(error);
     }
-
   }
 
   // Usuwanie wydarzeń
@@ -208,8 +208,6 @@ class DatabaseHelper {
     }
   }
 
-
-
   static Future<void> deleteAccount(String token) async {
     final url = Uri.parse('$link/delete_account');
     final response = await http.delete(
@@ -246,7 +244,8 @@ class DatabaseHelper {
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token'); // Zakładam, że token jest przechowywany pod kluczem 'token'
+    return prefs.getString(
+        'token'); // Zakładam, że token jest przechowywany pod kluczem 'token'
   }
 
   static Future<void> joinEvent(String eventId) async {
@@ -332,11 +331,13 @@ class DatabaseHelper {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['is_joined'] as bool; // Oczekujemy odpowiedzi serwera z kluczem 'is_joined'
+      return data['is_joined']
+          as bool; // Oczekujemy odpowiedzi serwera z kluczem 'is_joined'
     } else {
       throw Exception('Błąd przy sprawdzaniu statusu użytkownika.');
     }
   }
+
   // Sprawdzamy czy user jest adminem wydarzenia
   static Future<bool> isAdmin(String eventId) async {
     final token = await _getToken();
@@ -352,7 +353,8 @@ class DatabaseHelper {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['is_admin'] as bool; // Oczekujemy odpowiedzi serwera z kluczem 'is_admin'
+      return data['is_admin']
+          as bool; // Oczekujemy odpowiedzi serwera z kluczem 'is_admin'
     } else {
       throw Exception('Błąd przy sprawdzaniu uprawnień administratora.');
     }
